@@ -1,9 +1,9 @@
 {
-  "AWSTemplateFormatVersion" : "2010-09-09",
+  "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description" : "Builds service roles for CodeDeploy, CodePipeline and CodeBuild.This will also create an S3 Bucket.",
+  "Description": "Builds service roles for CodeDeploy, CodePipeline and CodeBuild. This will also create an S3 Bucket.",
 
-  "Resources" : {
+  "Resources": {
     "BuildTrustRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
@@ -87,30 +87,30 @@
               ]
             }
           ]
-        }
-        ,
-        "Roles": [{ "Ref": "BuildTrustRole"}]
+        },
+        "Roles": [{"Ref": "BuildTrustRole"}]
       }
     },
+
     "DeployTrustRole": {
-      "Type" : "AWS::IAM::Role",
-      "Properties" : {
-        "AssumeRolePolicyDocument" : {
-          "Statement" : [
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
             {
-              "Sid" : "",
-              "Effect" : "Allow",
-              "Principal" : {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
                 "Service": [
-                    "codedeploy.amazonaws.com"
+                  "codedeploy.amazonaws.com"
                 ]
               },
-              "Action" : "sts:AssumeRole"
+              "Action": "sts:AssumeRole"
             }
           ]
         },
-        "ManagedPolicyArns" : [ "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole" ],
-        "Path" : "/"
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"],
+        "Path": "/"
       }
     },
 
@@ -149,7 +149,7 @@
               "Effect": "Allow"
             },
             {
-            "Action": [
+              "Action": [
                 "codecommit:GetBranch",
                 "codecommit:GetCommit",
                 "codecommit:UploadArchive",
@@ -179,31 +179,31 @@
             },
             {
               "Action": [
-                  "codebuild:StartBuild",
-                  "codebuild:StopBuild",
-                  "codebuild:BatchGet*",
-                  "codebuild:Get*",
-                  "codebuild:List*",
-                  "codecommit:GetBranch",
-                  "codecommit:GetCommit",
-                  "codecommit:GetRepository",
-                  "codecommit:ListBranches",
-                  "s3:GetBucketLocation",
-                  "s3:ListAllMyBuckets"
+                "codebuild:StartBuild",
+                "codebuild:StopBuild",
+                "codebuild:BatchGet*",
+                "codebuild:Get*",
+                "codebuild:List*",
+                "codecommit:GetBranch",
+                "codecommit:GetCommit",
+                "codecommit:GetRepository",
+                "codecommit:ListBranches",
+                "s3:GetBucketLocation",
+                "s3:ListAllMyBuckets"
               ],
               "Effect": "Allow",
               "Resource": "*"
-          },
-          {
+            },
+            {
               "Action": [
-                  "logs:GetLogEvents"
+                "logs:GetLogEvents"
               ],
               "Effect": "Allow",
               "Resource": "arn:aws:logs:*:*:log-group:/aws/codebuild/*:log-stream:*"
-          }
+            }
           ]
         },
-        "Roles": [{ "Ref": "PipelineTrustRole"}]
+        "Roles": [{"Ref": "PipelineTrustRole"}]
       }
     },
 
@@ -233,67 +233,40 @@
       "Properties": {
         "PolicyName": "CodePipelineLambdaExecPolicy",
         "PolicyDocument": {
-  	       "Version": "2012-10-17",
-           "Statement": [
-    	       {
-      		      "Action": [
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": [
                 "logs:CreateLogGroup",
                 "logs:CreateLogStream",
                 "logs:PutLogEvents"
-                ],
-      		      "Effect": "Allow",
-      		      "Resource": "arn:aws:logs:*:*:*"},
-    	       {
-      		       "Action": ["codepipeline:PutJobSuccessResult",
-        	                 "codepipeline:PutJobFailureResult"],
-                 "Effect": "Allow",
-                 "Resource": "*" }]
-       },
-       "Roles": [{ "Ref": "CodePipelineLambdaExecRole"}]
+              ],
+              "Effect": "Allow",
+              "Resource": "arn:aws:logs:*:*:*"
+            },
+            {
+              "Action": [
+                "codepipeline:PutJobSuccessResult",
+                "codepipeline:PutJobFailureResult"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ]
+        },
+        "Roles": [{"Ref": "CodePipelineLambdaExecRole"}]
       }
     },
 
     "S3Bucket": {
       "Type": "AWS::S3::Bucket",
-      "DeletionPolicy":"Retain",
+      "DeletionPolicy": "Retain",
       "Properties": {
-        "BucketName" : { "Fn::Join" : ["", [ "cicd-workshop-", { "Ref": "AWS::Region" } , "-", {"Ref" : "AWS::AccountId"} ]] },
-        "VersioningConfiguration" : {
-          "Status" : "Enabled"
+        "BucketName": {
+          "Fn::Sub": "cicd-workshop-${AWS::Region}-${AWS::AccountId}"
         },
-        "Tags" : [
-          {"Key" : "Name", "Value" : "CICDWorkshop-S3Bucket" }
-        ]
-      }
-    }
-
-  },
-
-  "Outputs" : {
-    "CodeBuildRoleArn" : {
-      "Value" : { "Fn::GetAtt" : [ "BuildTrustRole", "Arn" ] },
-      "Description" : "Build role Arn"
-    },
-
-    "CodeDeployRoleArn" : {
-      "Value" : { "Fn::GetAtt" : [ "DeployTrustRole", "Arn" ] },
-      "Description" : "Deploy role Arn"
-    },
-
-    "CodePipelineRoleArn" : {
-      "Value" : { "Fn::GetAtt" : [ "PipelineTrustRole", "Arn" ] },
-      "Description" : "Pipeline role Arn"
-    },
-
-    "LambdaRoleArn" : {
-      "Value" : { "Fn::GetAtt" : [ "CodePipelineLambdaExecRole", "Arn" ] },
-      "Description" : "Lambda Exec role Arn"
-    },
-
-    "S3BucketName" : {
-      "Value" : { "Ref" : "S3Bucket" },
-      "Description" : "Bucket to for storing artifacts"
-    }
-
-  }
-}
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "Tags": [
+          {"Key": "Name
